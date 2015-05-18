@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Is that Mushroom Poisonous or Edible?</title>
+  <meta charset="utf-8">
+  <meta name="description" content="Is that Mushroom Poisonous or Edible?">
+  <meta name="author" content="Ty Abonil">
+  <meta name="generator" content="slidify" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/default.css" media="all" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/phone.css" 
+    media="only screen and (max-device-width: 480px)" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/slidify.css" >
+  <link rel="stylesheet" href="libraries/highlighters/highlight.js/css/tomorrow.css" />
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->  <link rel=stylesheet href="./assets/css/ribbons.css"></link>
+
+  
+  <!-- Grab CDN jQuery, fall back to local if offline -->
+  <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.min.js"></script>
+  <script>window.jQuery || document.write('<script src="libraries/widgets/quiz/js/jquery.js"><\/script>')</script> 
+  <script data-main="libraries/frameworks/io2012/js/slides" 
+    src="libraries/frameworks/io2012/js/require-1.0.8.min.js">
+  </script>
+  
+  
+
+</head>
+<body style="opacity: 0">
+  <slides class="layout-widescreen">
+    
+    <!-- LOGO SLIDE -->
+        <slide class="title-slide segue nobackground">
+  <hgroup class="auto-fadein">
+    <h1>Is that Mushroom Poisonous or Edible?</h1>
+    <h2>Classifying mushrooms by descriptive features</h2>
+    <p>Ty Abonil<br/></p>
+  </hgroup>
+  <article></article>  
+</slide>
+    
+
+    <!-- SLIDES -->
+    <slide class="" id="slide-1" style="background:;">
+  <hgroup>
+    <h3>The Problem</h3>
+  </hgroup>
+  <article data-timings="">
+    <p>The goal is to create a web app that ascertains whether a given mushroom is edible or poisonous, given qualitative description of its physical characteristics.</p>
+
+<p><a href="https://archive.ics.uci.edu/ml/datasets/Mushroom">The Mushroom Data Set (MDS)</a> is a multivariate collection of 8124 instances of mushroom descriptions, each of 22 discrete attributes, including a classification of whether a mushroom is edible or poisonous.  22 features is daunting.</p>
+
+<ul>
+<li> Bache, K. &amp; Lichman, M. (2013). <a href="http://archive.ics.uci.edu/ml">UCI Machine Learning Repository</a>. Irvine, CA: University of California, School of Information and Computer Science.</li>
+</ul>
+
+<p>To tackle the problem:</p>
+
+<ul>
+<li>The features must be reduce without impacting accuracy of classification</li>
+<li>The model must be very accurate as an incorrect classifcation can be deadly</li>
+</ul>
+
+<p>The file is read and, using the schema provided on the UCI website, names are assigned. NA values are omitted and 50/50 test and training sets are created. Please see the source file for details. </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-2" style="background:;">
+  <hgroup>
+    <h3>Reducing Featureset</h3>
+  </hgroup>
+  <article data-timings="">
+    <p>We opt to use the rpart package to grow a decision tree to find the most valuable features.  First, we create a tree with all possible features, then we prune the tree to find the ones which minimize the CP hyper parameter - a measure of the 100-fold cross-validated error.</p>
+
+<div style='float:left;width:48%;' class='centered'>
+  <p><img src="assets/fig/unnamed-chunk-3-1.png" alt="plot of chunk unnamed-chunk-3"> </p>
+
+<pre><code>## Error in rpartco(x): no information available on parameters from previous call to plot()
+</code></pre>
+
+</div>
+<div style='float:right;width:48%;'>
+  <p><img src="assets/fig/unnamed-chunk-4-1.png" alt="plot of chunk unnamed-chunk-4"> </p>
+
+<pre><code>## Error in rpartco(x): no information available on parameters from previous call to plot()
+</code></pre>
+
+<p>It is osberved that pruning down to two features has no effect on the tree.</p>
+
+</div>
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-3" style="background:;">
+  <hgroup>
+    <h3>The ANN Model</h3>
+  </hgroup>
+  <article data-timings="">
+    <p>It is observed that &quot;odor&quot; and &quot;spore.print.color&quot; account for almost all of the variance in the final classification.  An ANN is trained using these values:</p>
+
+<pre><code class="r">mush.frm &lt;- edible ~ odor + spore.print.color
+mush.trained &lt;- train(as.formula(mush.frm), data=mush.train, method = &quot;nnet&quot;, 
+                      maxit = 100,  trace = F)
+</code></pre>
+
+<p>We see that the best ANN is at size <code>1</code> and decay <code>0.1</code>.</p>
+
+<pre><code class="r">mush.fit &lt;- nnet(as.formula(mush.frm), data=mush.train, method = &quot;nnet&quot;, 
+                 maxit = 100,  trace = F, size=1, decay=0.1)
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-4" style="background:;">
+  <hgroup>
+    <h3>The Validation Test</h3>
+  </hgroup>
+  <article data-timings="">
+    <p>Using the validation set, the accuracy of the model is tested:</p>
+
+<pre><code class="r">success.rate &lt;- sum(
+  predict(
+    mush.fit, newdata=mush.test, type=&quot;class&quot;) == mush.test[,1]
+  )/nrow(mush.test) * 100
+success.rate
+</code></pre>
+
+<pre><code>## [1] 100
+</code></pre>
+
+<p>The success rate is found to be 100%!  This is a very strong model, so we can use it to predict whether a mushroom is poisonous or not.</p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+    <slide class="backdrop"></slide>
+  </slides>
+  <div class="pagination pagination-small" id='io2012-ptoc' style="display:none;">
+    <ul>
+      <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=1 title='The Problem'>
+         1
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=2 title='Reducing Featureset'>
+         2
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=3 title='The ANN Model'>
+         3
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=4 title='The Validation Test'>
+         4
+      </a>
+    </li>
+  </ul>
+  </div>  <!--[if IE]>
+    <script 
+      src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js">  
+    </script>
+    <script>CFInstall.check({mode: 'overlay'});</script>
+  <![endif]-->
+</body>
+  <!-- Load Javascripts for Widgets -->
+  
+  <!-- LOAD HIGHLIGHTER JS FILES -->
+  <script src="libraries/highlighters/highlight.js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <!-- DONE LOADING HIGHLIGHTER JS FILES -->
+   
+  </html>
