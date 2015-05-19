@@ -1,0 +1,10 @@
+base
+slidify
+lattice
+ggplot2
+caret
+nnet
+rpart
+rpart.plot
+rattle
+shiny
